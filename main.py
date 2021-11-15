@@ -32,6 +32,7 @@ def main():
     print ("It's possible values are/is: ", mcv.getDomain())
     my_sudoku.display()
 
+    #This loop runs the most constrained variable algorithm, help is printed if we run into a wall
     while True:
         mcv = my_sudoku.getMostConstrainedVariable()
         if mcv == False:
