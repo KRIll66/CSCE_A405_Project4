@@ -119,8 +119,9 @@ class Sudoku_Board:
                 if domain_values > len(domain):
                     most_constrained_variable = cell
                     domain_values = len(domain)
-        return most_constrained_variable
-        
+        if domain_values != 100:
+            return most_constrained_variable
+        return False
         
     #display function using the list of cells
     #duplicate displays are to test that pointers are

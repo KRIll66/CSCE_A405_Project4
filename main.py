@@ -32,5 +32,17 @@ def main():
     print ("It's possible values are/is: ", mcv.getDomain())
     my_sudoku.display()
 
+    while True:
+        mcv = my_sudoku.getMostConstrainedVariable()
+        if mcv == False:
+            break
+        domain = mcv.getDomain()
+        if len(domain) <= 1:
+            mcv.setValue(domain[0])
+            my_sudoku.setNewDomains()
+        my_sudoku.display()
+        if len(domain) > 1:
+            print ("Help")
+
 if __name__=='__main__':
     main()
