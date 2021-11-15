@@ -33,6 +33,7 @@ def main():
     my_sudoku.display()
 
     #This loop runs the most constrained variable algorithm, help is printed if we run into a wall
+    could_not_solve = False
     while True:
         mcv = my_sudoku.getMostConstrainedVariable()
         if mcv == False:
@@ -41,9 +42,15 @@ def main():
         if len(domain) <= 1:
             mcv.setValue(domain[0])
             my_sudoku.setNewDomains()
-        my_sudoku.display()
+       
         if len(domain) > 1:
-            print ("Help")
+            could_not_solve = True
+            break
+    
+    my_sudoku.display()
+    if could_not_solve:
+        print ("Couldn't solve the puzzle at hand")
+        print ("We got stuck on the cell at index: ", mcv.getIndex(), " with a domain of: ", domain)
 
 if __name__=='__main__':
     main()
