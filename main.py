@@ -1,5 +1,72 @@
 import sudoku, cell
 
+#iterate through every cell and find Naked Doubles
+def findNakedDouble(my_sudoku):
+    for cell in my_sudoku.s_board:
+        nakedDouble = False
+        nakedDoubleNeighbors = []
+        if not cell.hasValue():
+            mcv_domain = cell.getDomain()
+            mcv_domain.sort()
+            if len(mcv_domain) == 2:
+                #first, check for a naked double in this cell's row
+                row_neighbors = my_sudoku.getRowNeighbors(cell)
+                for neighbor in row_neighbors:
+                    neighbor_domain = neighbor.getDomain()
+                    neighbor_domain.sort()
+                    if neighbor_domain == mcv_domain:
+                        for neighbor_cell in row_neighbors:
+                            if neighbor_cell != cell and neighbor_cell != neighbor and not neighbor_cell.hasValue():
+                                nakedDoubleNeighbors.append(neighbor_cell)
+                        if len(nakedDoubleNeighbors)>0:
+                            assessNakedDouble(my_sudoku, nakedDoubleNeighbors, mcv_domain)
+                            return
+                #second, check for a naked double in this cell's column
+                column_neighbors = my_sudoku.getColumnNeighbors(cell)
+                for neighbor in column_neighbors:
+                    neighbor_domain = neighbor.getDomain()
+                    neighbor_domain.sort()
+                    if neighbor_domain == mcv_domain:
+                        for neighbor_cell in column_neighbors:
+                            if neighbor_cell != cell and neighbor_cell != neighbor and not neighbor_cell.hasValue():
+                                nakedDoubleNeighbors.append(neighbor_cell)
+                        if len(nakedDoubleNeighbors)>0:
+                            assessNakedDouble(my_sudoku, nakedDoubleNeighbors, mcv_domain)
+                            return
+                #lastly, check for a naked double in this cell's square
+                square_neighbors = my_sudoku.getSquareNeighbors(cell)
+                for neighbor in square_neighbors:
+                    neighbor_domain = neighbor.getDomain()
+                    neighbor_domain.sort()
+                    if neighbor_domain == mcv_domain:
+                        for neighbor_cell in square_neighbors:
+                            if neighbor_cell != cell and neighbor_cell != neighbor and not neighbor_cell.hasValue():
+                                nakedDoubleNeighbors.append(neighbor_cell)
+                        if len(nakedDoubleNeighbors)>0:
+                            assessNakedDouble(my_sudoku, nakedDoubleNeighbors, mcv_domain)
+                            return
+                
+
+def assessNakedDouble(my_sudoku, neighbors, mcv_domain):
+
+    for neighbor in neighbors:                         
+        for value in mcv_domain:
+            neighbor_domain = neighbor.getDomain()
+            if value in neighbor_domain:
+            #if value in my_sudoku.
+                if len(neighbor_domain) == 1: 
+                    print ("Error is here")    
+                neighbor.setDomain(value)
+                neighbor_domain = neighbor.getDomain()
+                if len(neighbor_domain) == 1:
+                    neighbor.setValue(neighbor_domain[0])
+                    my_sudoku.setNewDomains()
+                    print ("Found a value using Naked Doubles for index:", neighbor.getIndex())
+                    return
+    return
+   
+
+
 def main():
 
     my_sudoku = sudoku.Sudoku_Board()
@@ -12,18 +79,6 @@ def main():
     print("The indexes are:")
     my_sudoku.displayByIndex()
 
-    #############################################################################
-    #The below commented out code was used to verify that neighboring cells are
-    #being assessed correctly and the domains are being assessed correctly
-    #############################################################################
-
-    #target_index = input("Enter the target cell by index:")
-    #cell = my_sudoku.getCellByIndex(int(target_index))
-    #neighbors = my_sudoku.getNeighbors(cell)
-    
-    #print("The current value at that cell is: ",cell.getValue())
-    #print("The neighbors are at indexes: ", neighbors)
-    #print("The taken values are: ", sorted(my_sudoku.getNeighborValues(neighbors)))
 
     #assess new domains after populating the sudoku board
     my_sudoku.setNewDomains()
@@ -32,25 +87,29 @@ def main():
     print ("It's possible values are/is: ", mcv.getDomain())
     my_sudoku.display()
 
+    
     #This loop runs the most constrained variable algorithm, help is printed if we run into a wall
     could_not_solve = False
+    found_values = 0
     while True:
         mcv = my_sudoku.getMostConstrainedVariable()
         if mcv == False:
             break
         domain = mcv.getDomain()
-        if len(domain) <= 1:
+        if len(domain) == 1:
             mcv.setValue(domain[0])
             my_sudoku.setNewDomains()
+            found_values += 1
        
+        #TODO: branch to 'findNakedDoubles()' from this check
+        #findNakedDoubles() should identify a naked double, solve based off the 
+        #constraint and branch back to this loop
         if len(domain) > 1:
-            could_not_solve = True
-            break
-    
+            findNakedDouble(my_sudoku)
+            #my_sudoku.display()
+            #break
+       
     my_sudoku.display()
-    if could_not_solve:
-        print ("Couldn't solve the puzzle at hand")
-        print ("We got stuck on the cell at index: ", mcv.getIndex(), " with a domain of: ", domain)
 
 if __name__=='__main__':
     main()

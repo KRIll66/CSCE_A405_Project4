@@ -12,7 +12,7 @@ class Cell:
     def setDomain(self, val):
         if val in self.domain:
             self.domain.remove(val)
-        
+            
     def hasValue(self):
         if self.value != 0:
             return True

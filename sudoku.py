@@ -96,6 +96,37 @@ class Sudoku_Board:
                         neighbors.append(cell_index)
         return neighbors
 
+    def getColumnNeighbors(self, cell):
+        index = cell.getIndex()        
+        column = index%9
+        neighbors = []
+        for row in self.rows_list:
+            if row[column] != cell:
+                neighbors.append(row[column])
+        return neighbors
+
+    def getRowNeighbors(self, cell):
+        neighbors = []
+        for row in self.rows_list:
+            if cell in row:
+                for item in row:
+                    if item != cell:
+                        neighbors.append(item)
+                return neighbors
+
+
+    def getSquareNeighbors(self, cell):
+        neighbors = []
+        cell_index = cell.getIndex()
+        for square in self.SQUARES_LIST:
+            if cell_index in square:
+                for index in square:
+                    if index != cell_index:
+                        neighbors.append(self.s_board[index])
+                return neighbors
+
+
+
     #grab all entry values for neighboring cells, return them as a list
     def getNeighborValues (self, neighbors_list):
         values = []
@@ -140,10 +171,18 @@ class Sudoku_Board:
             counter += 1        
         print ("|\n-------------------------")
 
-
-    #TODO: delete this after testing
     def getCellByIndex(self, index):
         return self.s_board[index]
+
+
+#############################################################################################
+#
+#TODO: delete everything below this line!
+#
+##############################################################################################
+
+    #TODO: delete this after testing
+    
 
 
     #return first cell that matches value
@@ -180,10 +219,13 @@ class Sudoku_Board:
                 if counter!= 0:
                     print ("|")
             if counter % 27 == 0:
-                   print ("-------------------------")
+                   print ("----------------------------------")
             if counter % 3 == 0:
-                print ("|", end=" ")     
-            print (counter, end=" ")         
+                print ("|", end=" ")   
+            if counter < 10:
+                print ("", counter, end=" ")
+            else:  
+                print (counter, end=" ")         
             counter += 1        
-        print ("|\n-------------------------")
+        print ("|\n----------------------------------")
         
