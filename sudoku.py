@@ -60,15 +60,23 @@ class Sudoku_Board:
     #populate the board using a url to a .txt file
     #TODO: update domains for each cell based off of
     #initial table data
-    def populateBoard(self, url):
-        counter = 0
-        file = urllib.request.urlopen(url)
-        for line in file:
-            decoded_line = line.decode("utf-8")
-            for value in decoded_line:
-                if value != " " and value != "\n":
-                    self.s_board[counter].setValue(int(value))                   
-                    counter+=1
+    def populateBoard(self, file_path, input_type):
+        counter = 0        
+        if input_type == 1:
+            file = urllib.request.urlopen(file_path)
+            for line in file:
+                decoded_line = line.decode("utf-8")
+                for value in decoded_line:
+                    if value != " " and value != "\n":
+                        self.s_board[counter].setValue(int(value))                   
+                        counter+=1
+        else:
+            file = open(file_path)
+            for line in file:                
+                for value in line:
+                    if value != " " and value != "\n":
+                        self.s_board[counter].setValue(int(value))                   
+                        counter+=1
 
     #get all shared cells for cell
     #input, cell object
@@ -135,12 +143,17 @@ class Sudoku_Board:
                 values.append(self.s_board[index].getValue())
         return values
 
+    #iterate through each cell and set domains based off
+    #constraint satisfaction, this gets called whenever a domain changes
     def setNewDomains(self):
         for cell in self.s_board:
             neighbors = self.getNeighbors(cell)
             neighbor_values = self.getNeighborValues(neighbors)
             for value in neighbor_values:
                 cell.setDomain(value)
+                if len(cell.getDomain())==1:
+                    print("Found a value for: ", cell.getIndex())
+                    cell.setValue(cell.domain[0])
 
     def getMostConstrainedVariable(self):
         domain_values = 100
