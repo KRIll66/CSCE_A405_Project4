@@ -1,4 +1,4 @@
-import sudoku, cell
+import sudoku, cell, copy
 
 #iterate through every cell and find Naked Doubles
 def findNakedDouble(my_sudoku):
@@ -96,14 +96,11 @@ def findNakedTriple(my_sudoku):
                                         naked_triple_domain.append(value)
                                 naked_triple_neighbors.append(neighbor)
                                 if len(naked_triple_neighbors) == 3:
-                                    print("Found naked Triple using rows!!!")
-                                    for friend in naked_triple_neighbors:
-                                        print("Cell at index: ", friend.getIndex(), "with domain of: ", friend.getDomain())
+                                    #print("Found naked Triple using rows!!!")
+                                    #for friend in naked_triple_neighbors:
+                                        #print("Cell at index: ", friend.getIndex(), "with domain of: ", friend.getDomain())
                                     found_value = assessNaked(my_sudoku, naked_triple_neighbors, row_neighbors, naked_triple_domain)
-                                    #break
-                                    if found_value:
-                                        my_sudoku.displayByIndex()
-                                        my_sudoku.display()
+                                   
                                         
                 #second, check for a naked triple in this cell's column
                 naked_triple_neighbors=[]
@@ -134,14 +131,11 @@ def findNakedTriple(my_sudoku):
                                         naked_triple_domain.append(value)
                                 naked_triple_neighbors.append(neighbor)
                                 if len(naked_triple_neighbors) == 3:
-                                    print("Found naked Triple using columns!!!")
-                                    for friend in naked_triple_neighbors:
-                                        print("Cell at index: ", friend.getIndex(), "with domain of: ", friend.getDomain())
+                                    #print("Found naked Triple using columns!!!")
+                                    #for friend in naked_triple_neighbors:
+                                        #print("Cell at index: ", friend.getIndex(), "with domain of: ", friend.getDomain())
                                     found_value = assessNaked(my_sudoku, naked_triple_neighbors, column_neighbors, naked_triple_domain)
-                                    #break
-                                    if found_value:
-                                        my_sudoku.displayByIndex()
-                                        my_sudoku.display()
+                                    
 
                 #last, check for a naked triple in this cell's square
                 naked_triple_neighbors = []
@@ -172,14 +166,12 @@ def findNakedTriple(my_sudoku):
                                         naked_triple_domain.append(value)
                                 naked_triple_neighbors.append(neighbor)
                                 if len(naked_triple_neighbors) == 3:
-                                    print("Found naked Triple using squares!!!")
-                                    for friend in naked_triple_neighbors:
-                                        print("Cell at index: ", friend.getIndex(), "with domain of: ", friend.getDomain())
+                                    #print("Found naked Triple using squares!!!")
+                                    #for friend in naked_triple_neighbors:
+                                        #print("Cell at index: ", friend.getIndex(), "with domain of: ", friend.getDomain())
                                     found_value = assessNaked(my_sudoku, naked_triple_neighbors, square_neighbors, naked_triple_domain)
                                     #break
-                                    if found_value:
-                                        my_sudoku.displayByIndex()
-                                        my_sudoku.display()
+                                    
 
     return found_value
                                     
@@ -207,10 +199,10 @@ def assessNaked(my_sudoku, friends, neighbors, domain):
                     if len(neighbor_domain) == 1:
                         neighbor.setValue(neighbor_domain[0])
                         my_sudoku.setNewDomains()
-                        if len(domain) == 2:
-                            print ("Found a value using Naked Doubles for index:", neighbor.getIndex())
-                        if len(domain) == 3:
-                            print ("Found a value using Naked Triples!!!!! for index:", neighbor.getIndex())                        
+                        #if len(domain) == 2:
+                            #print ("Found a value using Naked Doubles for index:", neighbor.getIndex())
+                        #if len(domain) == 3:
+                            #print ("Found a value using Naked Triples!!!!! for index:", neighbor.getIndex())                        
                         found_value = True
     return found_value
    
@@ -237,22 +229,17 @@ def main():
         
     file_path.strip()    
     my_sudoku.populateBoard(file_path, int(input_type))
+    #assess new domains after populating the sudoku board
+    my_sudoku.setNewDomains()
     print("The sudoku board is:")
     my_sudoku.display()
     print("The indexes are:")
-    my_sudoku.displayByIndex()
-
-
-    #assess new domains after populating the sudoku board
-    my_sudoku.setNewDomains()
-    mcv = my_sudoku.getMostConstrainedVariable()
-    print ("The most constrained variable is at index: ", mcv.getIndex())
-    print ("It's possible values are/is: ", mcv.getDomain())
-    my_sudoku.display()
-
-      
-    
+    my_sudoku.displayByIndex()      
+    guessed = False
+    solved = False
     duplicate_loops = 0
+
+    #enter the puzzle solving loop
     while True:
         found_a_value = False
         mcv = my_sudoku.getMostConstrainedVariable()
@@ -262,23 +249,90 @@ def main():
         if len(domain) == 1:
             mcv.setValue(domain[0])
             my_sudoku.setNewDomains()
-            print ("Found a value using Constraint Satisfaction for index:", mcv.getIndex())
             found_a_value = True
                  
        
         if len(domain) == 2:
             found_a_value = findNakedDouble(my_sudoku)
             my_sudoku.setNewDomains()
-            #my_sudoku.display()
-            #break
+            
         
         #naked doubles wasn't able to solve the issue, try naked triples
         if not found_a_value:
-            my_sudoku.display()
             found_a_value = findNakedTriple(my_sudoku)
             my_sudoku.setNewDomains()
         
-        
+        if not found_a_value:
+            duplicate_loops += 1
+
+        if my_sudoku.isSolved():
+            solved = True
+            break
+            
+
+        #try a guess function here...
+        #it currently does not work...
+        if duplicate_loops > 20:
+            print("We hit the guess function!")
+            #my_sudoku.display()
+            new_sudoku = sudoku.Sudoku_Board()
+            for i, cell in enumerate(my_sudoku.s_board):
+                    new_sudoku.s_board[i].setDomain(cell.getDomain()) 
+                    new_sudoku.s_board[i].setValue(cell.getValue()) 
+
+            for attempt in range(len(domain)):                
+                new_sudoku.setNewDomains()
+                print("We hit the guess function!")
+                mcv = new_sudoku.getMostConstrainedVariable()
+                mcv.setValue(mcv.getDomain()[attempt])
+                #new_sudoku.display()
+                duplicate_loops = 0
+                while True:
+                    found_a_value = False
+                    mcv = new_sudoku.getMostConstrainedVariable()
+                    if mcv == False:
+                        break
+                    domain = mcv.getDomain()
+                    if len(domain) == 1:
+                        mcv.setValue(domain[0])
+                        new_sudoku.setNewDomains()
+                        found_a_value = True
+                            
+                
+                    if len(domain) == 2:
+                        found_a_value = findNakedDouble(new_sudoku)
+                        new_sudoku.setNewDomains()
+                        
+                    
+                    #naked doubles wasn't able to solve the issue, try naked triples
+                    if not found_a_value:
+                        found_a_value = findNakedTriple(new_sudoku)
+                        new_sudoku.setNewDomains()
+                    
+                    if not found_a_value:
+                        duplicate_loops += 1
+
+                    if duplicate_loops > 15:
+                        break
+            
+            solved = new_sudoku.isSolved()
+            if new_sudoku.getMostConstrainedVariable() == False:
+                if solved:
+                    print("Success!!")
+                    
+                else:
+                    print("Sadness....")
+                
+            new_sudoku.display()
+            
+            if solved:
+                break
+            del new_sudoku
+
+
+    if solved:
+        print("We have found a solution!")
+    else: print ("We have not solved the puzzle...")
     my_sudoku.display()
 
 if __name__=='__main__':

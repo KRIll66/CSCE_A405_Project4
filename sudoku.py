@@ -152,7 +152,7 @@ class Sudoku_Board:
             for value in neighbor_values:
                 cell.setDomain(value)
                 if len(cell.getDomain())==1:
-                    print("Found a value for: ", cell.getIndex())
+                    #print("Found a value for: ", cell.getIndex())
                     cell.setValue(cell.domain[0])
 
     def getMostConstrainedVariable(self):
@@ -186,6 +186,14 @@ class Sudoku_Board:
 
     def getCellByIndex(self, index):
         return self.s_board[index]
+
+    def isSolved(self):
+        for cell in self.s_board:
+            neighbors = self.getNeighborValues(self.getNeighbors(cell))
+            if cell.getValue() in neighbors or len(neighbors) < 8:
+                return False
+        return True
+
 
 
 #############################################################################################
