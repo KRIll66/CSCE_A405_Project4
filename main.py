@@ -7,17 +7,17 @@ from utils import fetch_sudokus, print_grid
 
 def solve(grid, index, total):
     
-    print("\nSudoku {}/{} : \n{}".format(index, total, print_grid(grid)))
+    print("\nSudoku : \n{}".format(index, total, print_grid(grid)))
 
 
-    print("{}/{} : AC3 starting".format(index, total))
+    print("AC3 starting".format(index, total))
 
     sudoku = Sudoku(grid)
     AC3_result = AC3(sudoku)
 
 
     if not AC3_result:
-        print(" this sudoku has no solution")
+        print("This sudoku has no solution")
 
     else:
 
@@ -46,10 +46,10 @@ def solve(grid, index, total):
                 sudoku.possibilities[cell] = assignment[cell] if len(cell) > 1 else sudoku.possibilities[cell]
             
             if assignment:
-                print("{}/{} : Result: \n{}".format(index, total, sudoku))
+                print("Result: \n{}".format(index, total, sudoku))
 
             else:
-                print("{}/{} : No solution exists".format(index, total))
+                print("No solution exists".format(index, total))
 
 
 if __name__ == "__main__":
