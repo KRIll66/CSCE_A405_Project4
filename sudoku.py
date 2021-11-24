@@ -1,252 +1,192 @@
-import cell, urllib.request
+import itertools
+import sys
 
-class Sudoku_Board:
-    def __init__(self):       
 
-        #make a blank sudoku with cell objects
-        self.s_board = []
-        for i in range(81):
-            #the stored index will be 0 based
-            self.s_board.append(cell.Cell(0, i))  
+rows = "123456789"
+cols = "ABCDEFGHI"
+
+class Sudoku:
+
+    def __init__(self, grid):
+        game = list(grid)
         
-        #the below are used to reference like rows by list 
-        #and like columns by index
-        self.A = []
-        self.B = []
-        self.C = []
-        self.D = []
-        self.E = []
-        self.F = []
-        self.G = []
-        self.H = []
-        self.I = []
-        for i in range (9):
-            self.A.append(self.s_board[i])
-        for i in range (9,18):
-            self.B.append(self.s_board[i])
-        for i in range (18,27):
-            self.C.append(self.s_board[i])
-        for i in range (27, 36):
-            self.D.append(self.s_board[i])
-        for i in range (36, 45):
-            self.E.append(self.s_board[i])
-        for i in range (45, 54):
-            self.F.append(self.s_board[i])
-        for i in range (54, 63):
-            self.G.append(self.s_board[i])
-        for i in range (63, 72):
-            self.H.append(self.s_board[i])
-        for i in range (72, 81):
-            self.I.append(self.s_board[i])
-        self.rows_list = [self.A, self.B, self.C, 
-                          self.D, self.E, self.F, 
-                          self.G, self.H, self.I]             
-
-        #define which indexes belong to which sub grid
-        #DO NOT change any of these values
-        self.top_left =      [0, 1, 2,  9,10,11,18,19,20]
-        self.top_center =    [3, 4, 5, 12,13,14,21,22,23]
-        self.top_right =     [6, 7, 8, 15,16,17,24,25,26]
-        self.middle_left =   [27,28,29,36,37,38,45,46,47]
-        self.middle_center = [30,31,32,39,40,41,48,49,50]
-        self.middle_right =  [33,34,35,42,43,44,51,52,53]
-        self.bottom_left =   [54,55,56,63,64,65,72,73,74]
-        self.bottom_center = [57,58,59,66,67,68,75,76,77]
-        self.bottom_right =  [60,61,62,69,70,71,78,79,80]
-        self.SQUARES_LIST = [self.top_left, self.top_center, self.top_right, 
-                             self.middle_left, self.middle_center, self.middle_right, 
-                             self.bottom_left, self.bottom_center, self.bottom_right]
-
-    #populate the board using a url to a .txt file
-    #TODO: update domains for each cell based off of
-    #initial table data
-    def populateBoard(self, file_path, input_type):
-        counter = 0        
-        if input_type == 1:
-            file = urllib.request.urlopen(file_path)
-            for line in file:
-                decoded_line = line.decode("utf-8")
-                for value in decoded_line:
-                    if value != " " and value != "\n":
-                        self.s_board[counter].setValue(int(value))                   
-                        counter+=1
-        else:
-            file = open(file_path)
-            for line in file:                
-                for value in line:
-                    if value != " " and value != "\n":
-                        self.s_board[counter].setValue(int(value))                   
-                        counter+=1
-
-    #get all shared cells for cell
-    #input, cell object
-    #return: list of indexes which are neighbors of the target cell
-    #neighbors are in the same row, same column, and same sub grid (square)
-    def getNeighbors(self, cell):
-        index = cell.getIndex()        
-        column = index%9
-        row = index/9
-        row = int(row)
-        neighbors = []
-
-        #get the indexes of all neighboring cells
-        for row in self.rows_list:
-            if row[column].getIndex() not in neighbors and row[column].getIndex() != index:
-                neighbors.append(row[column].getIndex())
-            if cell in row:
-                for cell in row:
-                    if cell.getIndex() not in neighbors and cell.getIndex() != index:
-                        neighbors.append(cell.getIndex())
-        for square in self.SQUARES_LIST:
-            if index in square:
-                for cell_index in square:
-                    if cell_index not in neighbors and cell_index != index:
-                        neighbors.append(cell_index)
-        return neighbors
-
-    def getColumnNeighbors(self, cell):
-        index = cell.getIndex()        
-        column = index%9
-        neighbors = []
-        for row in self.rows_list:
-            if row[column] != cell:
-                neighbors.append(row[column])
-        return neighbors
-
-    def getRowNeighbors(self, cell):
-        neighbors = []
-        for row in self.rows_list:
-            if cell in row:
-                for item in row:
-                    if item != cell:
-                        neighbors.append(item)
-                return neighbors
-
-
-    def getSquareNeighbors(self, cell):
-        neighbors = []
-        cell_index = cell.getIndex()
-        for square in self.SQUARES_LIST:
-            if cell_index in square:
-                for index in square:
-                    if index != cell_index:
-                        neighbors.append(self.s_board[index])
-                return neighbors
-
-
-
-    #grab all entry values for neighboring cells, return them as a list
-    def getNeighborValues (self, neighbors_list):
-        values = []
-        for index in neighbors_list:
-            if self.s_board[index].getValue() not in values and self.s_board[index].getValue() != 0:
-                values.append(self.s_board[index].getValue())
-        return values
-
-    #iterate through each cell and set domains based off
-    #constraint satisfaction, this gets called whenever a domain changes
-    def setNewDomains(self):
-        for cell in self.s_board:
-            neighbors = self.getNeighbors(cell)
-            neighbor_values = self.getNeighborValues(neighbors)
-            for value in neighbor_values:
-                cell.setDomain(value)
-                if len(cell.getDomain())==1:
-                    #print("Found a value for: ", cell.getIndex())
-                    cell.setValue(cell.domain[0])
-
-    def getMostConstrainedVariable(self):
-        domain_values = 100
-        for cell in self.s_board:
-            if cell.getValue() == 0:
-                domain = cell.getDomain()
-                if domain_values > len(domain):
-                    most_constrained_variable = cell
-                    domain_values = len(domain)
-        if domain_values != 100:
-            return most_constrained_variable
-        return False
         
-    #display function using the list of cells
-    #duplicate displays are to test that pointers are
-    #working for propogating restraints
-    def display(self):
-        counter = 0
-        for cell in self.s_board:                            
-            if counter % 9 == 0:
-                if counter!= 0:
-                    print ("|")
-            if counter % 27 == 0:
-                   print ("-------------------------")
-            if counter % 3 == 0:
-                print ("|", end=" ")     
-            print (cell.getValue(), end=" ")         
-            counter += 1        
-        print ("|\n-------------------------")
+        self.cells = list()
+        self.cells = self.generate_coords()
 
-    def getCellByIndex(self, index):
-        return self.s_board[index]
+        
+        self.possibilities = dict()
+        self.possibilities = self.generate_possibilities(grid)
+   
+        
+        rule_constraints = self.generate_rules_constraints()
 
-    def isSolved(self):
-        for cell in self.s_board:
-            neighbors = self.getNeighborValues(self.getNeighbors(cell))
-            if cell.getValue() in neighbors or len(neighbors) < 8:
+        
+        self.binary_constraints = list()
+        self.binary_constraints = self.generate_binary_constraints(rule_constraints)
+
+        
+        self.related_cells = dict()
+        self.related_cells = self.generate_related_cells()
+
+        
+        self.pruned = dict()
+        self.pruned = {v: list() if grid[i] == '0' else [int(grid[i])] for i, v in enumerate(self.cells)}
+
+
+    """
+    generates all the coordinates of the cells
+    """
+    def generate_coords(self):
+
+        all_cells_coords = []
+
+        
+        for col in cols:
+
+            
+            for row in rows:
+                
+                
+                new_coords = col + row
+                all_cells_coords.append(new_coords)
+
+        return all_cells_coords
+
+    """
+    generates all possible value remaining for each cell
+    """
+    def generate_possibilities(self, grid):
+
+        grid_as_list = list(grid)
+
+        possibilities = dict()
+
+        for index, coords in enumerate(self.cells):
+            
+            if grid_as_list[index] == "0":
+                possibilities[coords] = list(range(1,10))
+            
+            else:
+                possibilities[coords] = [int(grid_as_list[index])]
+
+        return possibilities
+
+    """
+    generates the constraints based on the rules of the game:
+    value different from any in row, column or square
+    """
+    def generate_rules_constraints(self):
+        
+        row_constraints = []
+        column_constraints = []
+        square_constraints = []
+
+        
+        for row in rows:
+            row_constraints.append([col + row for col in cols])
+
+        
+        for col in cols:
+            column_constraints.append([col + row for row in rows])
+
+
+        rows_square_coords = (cols[i:i+3] for i in range(0, len(rows), 3))
+        rows_square_coords = list(rows_square_coords)
+
+        cols_square_coords = (rows[i:i+3] for i in range(0, len(cols), 3))
+        cols_square_coords = list(cols_square_coords)
+
+        
+        for row in rows_square_coords:
+            for col in cols_square_coords:
+
+                current_square_constraints = []
+                
+                
+                for x in row:
+                    for y in col:
+                        current_square_constraints.append(x + y)
+
+                square_constraints.append(current_square_constraints)
+
+        
+        return row_constraints + column_constraints + square_constraints
+
+    """
+    generates the binary constraints based on the rule constraints
+    """
+    def generate_binary_constraints(self, rule_constraints):
+        generated_binary_constraints = list()
+
+        
+        for constraint_set in rule_constraints:
+
+            binary_constraints = list()   
+            
+            for tuple_of_constraint in itertools.permutations(constraint_set, 2):
+                binary_constraints.append(tuple_of_constraint)
+
+           
+            for constraint in binary_constraints:
+
+
+                constraint_as_list = list(constraint)
+                if(constraint_as_list not in generated_binary_constraints):
+                    generated_binary_constraints.append([constraint[0], constraint[1]])
+
+        return generated_binary_constraints
+
+    """
+    generates the the constraint-related cell for each one of them
+    """
+    def generate_related_cells(self):
+        related_cells = dict()
+        
+        for cell in self.cells:
+
+            related_cells[cell] = list()
+            
+            for constraint in self.binary_constraints:
+                if cell == constraint[0]:
+                    related_cells[cell].append(constraint[1])
+
+        return related_cells
+
+    """
+    checks if the Sudoku's solution is finished
+    we loop through the possibilities for each cell
+    if all of them has only one, then the Sudoku is solved
+    """
+    def isFinished(self):
+        for coords, possibilities in self.possibilities.items():
+            if len(possibilities) > 1:
                 return False
-        return True
-
-
-
-#############################################################################################
-#
-#TODO: delete everything below this line!
-#
-##############################################################################################
-
-    #TODO: delete this after testing
-    
-
-
-    #return first cell that matches value
-    #TODO: delete this method, used for testing only
-    def getCell (self, val):
-        for cell in self.s_board:
-            if cell.getValue() == val:
-                return cell
-         
-    #display function using the columns 2d array
-    #duplicate displays are to test that pointers are
-    #working for propogating restraints
-    #TODO: delete this method after solution is found
-    def displayNeighbors (self):
-        counter = 0
-        for row in self.rows_list:
-            for cell in row:
-                if counter % 9 == 0:
-                    if counter!= 0:
-                        print ("|")
-                if counter % 27 == 0:
-                   print ("-------------------------")
-                if counter % 3 == 0:
-                    print ("|", end=" ")
-                print (cell.getValue(), end=" ")
-                counter+=1
-        print ("|\n-------------------------")
-
-    #TODO: delete this method, for testing only
-    def displayByIndex(self):
-        counter = 0
-        for cell in self.s_board:                            
-            if counter % 9 == 0:
-                if counter!= 0:
-                    print ("|")
-            if counter % 27 == 0:
-                   print ("----------------------------------")
-            if counter % 3 == 0:
-                print ("|", end=" ")   
-            if counter < 10:
-                print ("", counter, end=" ")
-            else:  
-                print (counter, end=" ")         
-            counter += 1        
-        print ("|\n----------------------------------")
         
+        return True
+    
+    """
+    returns a human-readable string
+    """
+    def __str__(self):
+
+        output = ""
+        count = 1
+        
+        
+        for cell in self.cells:
+            
+            value = str(self.possibilities[cell])
+            if type(self.possibilities[cell]) == list:
+                value = str(self.possibilities[cell][0])
+
+            output += "[" + value + "]"
+
+            if count >= 9:
+                count = 0
+                output += "\n"
+            
+            count += 1
+        
+        return output
+       
