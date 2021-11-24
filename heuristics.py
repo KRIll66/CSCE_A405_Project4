@@ -1,32 +1,36 @@
-from utils import number_of_conflicts
 
 """
 Most Constrained Variable (MRV) heuristic
-
 """
-def select_unassigned_variable(assignment, sudoku):
-
+def mvr(assignment, sudoku):
     unassigned = []
 
-
     for cell in sudoku.cells:
-
         if cell not in assignment:
-
             unassigned.append(cell)
 
+    criteria = lambda cell: len(sudoku.domain[cell])
 
-    criterion = lambda cell: len(sudoku.possibilities[cell])
-
-    return min(unassigned, key=criterion)
+    return min(unassigned, key=criteria)
 
 """
 Least Constraining Value (LCV) heuristic
 """
-def order_domain_values(sudoku, cell):
+def lcv(sudoku, cell):
 
-    if len(sudoku.possibilities[cell]) == 1:
-        return sudoku.possibilities[cell]
+    if len(sudoku.domain[cell]) == 1:
+        return sudoku.domain[cell]
 
-    criterion = lambda value: number_of_conflicts(sudoku, cell, value)
-    return sorted(sudoku.possibilities[cell], key=criterion)
+    criteria = lambda value: conflict_counter(sudoku, cell, value)
+    return sorted(sudoku.domain[cell], key=criteria)
+
+
+def conflict_counter(sudoku, cell, value):
+    
+    count = 0
+
+    for related in sudoku.related_cells[cell]:
+        if len(sudoku.domain[related]) > 1 and value in sudoku.domain[related]:
+            count += 1
+
+    return count

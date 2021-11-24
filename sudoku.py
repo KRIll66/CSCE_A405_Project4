@@ -1,186 +1,149 @@
 import itertools
-import sys
 
-
-rows = "123456789"
 cols = "ABCDEFGHI"
+rows = "123456789"
 
 class Sudoku:
 
     def __init__(self, grid):
-        game = list(grid)
-        
         
         self.cells = list()
-        self.cells = self.generate_coords()
-
-        
-        self.possibilities = dict()
-        self.possibilities = self.generate_possibilities(grid)
-   
-        
-        rule_constraints = self.generate_rules_constraints()
-
-        
+        self.cells = self.get_coordinates()
+        self.domain = dict()
+        self.domain = self.generate_domain(grid)
+        constraints = self.get_constraints()
         self.binary_constraints = list()
-        self.binary_constraints = self.generate_binary_constraints(rule_constraints)
-
-        
+        self.binary_constraints = self.get_binary_constraints(constraints)
         self.related_cells = dict()
-        self.related_cells = self.generate_related_cells()
-
-        
+        self.related_cells = self.get_related_cells()
         self.pruned = dict()
         self.pruned = {v: list() if grid[i] == '0' else [int(grid[i])] for i, v in enumerate(self.cells)}
 
 
     """
-    generates all the coordinates of the cells
+    gets all the coordinates of the cells
     """
-    def generate_coords(self):
+    def get_coordinates(self):
 
-        all_cells_coords = []
+        all_cells = []
 
-        
         for col in cols:
 
-            
             for row in rows:
-                
-                
                 new_coords = col + row
-                all_cells_coords.append(new_coords)
+                all_cells.append(new_coords)
 
-        return all_cells_coords
+        return all_cells
 
     """
-    generates all possible value remaining for each cell
+    gets all possible values remaining for each cell
     """
-    def generate_possibilities(self, grid):
+    def generate_domain(self, grid):
 
-        grid_as_list = list(grid)
+        glist = list(grid)
+        domain = dict()
 
-        possibilities = dict()
-
-        for index, coords in enumerate(self.cells):
-            
-            if grid_as_list[index] == "0":
-                possibilities[coords] = list(range(1,10))
+        for index, coordinates in enumerate(self.cells):
+            if glist[index] == "0":
+                domain[coordinates] = list(range(1,10))
             
             else:
-                possibilities[coords] = [int(grid_as_list[index])]
+                domain[coordinates] = [int(glist[index])]
 
-        return possibilities
+        return domain
 
     """
-    generates the constraints based on the rules of the game:
-    value different from any in row, column or square
+    gets the constraints of the game where # must be different from any in row, column or square
     """
-    def generate_rules_constraints(self):
+    def get_constraints(self):
         
-        row_constraints = []
-        column_constraints = []
-        square_constraints = []
+        r_constraints = []
+        c_constraints = []
+        sq_constraints = []
 
         
         for row in rows:
-            row_constraints.append([col + row for col in cols])
-
+            r_constraints.append([col + row for col in cols])
         
         for col in cols:
-            column_constraints.append([col + row for row in rows])
+            c_constraints.append([col + row for row in rows])
 
+        rows_sq_coords = (cols[i:i+3] for i in range(0, len(rows), 3))
+        rows_sq_coords = list(rows_sq_coords)
 
-        rows_square_coords = (cols[i:i+3] for i in range(0, len(rows), 3))
-        rows_square_coords = list(rows_square_coords)
+        col_sq_coords = (rows[i:i+3] for i in range(0, len(cols), 3))
+        col_sq_coords = list(col_sq_coords)
 
-        cols_square_coords = (rows[i:i+3] for i in range(0, len(cols), 3))
-        cols_square_coords = list(cols_square_coords)
-
-        
-        for row in rows_square_coords:
-            for col in cols_square_coords:
-
-                current_square_constraints = []
-                
+        for row in rows_sq_coords:
+            for col in col_sq_coords:
+                temp_sp_constraints = []
                 
                 for x in row:
                     for y in col:
-                        current_square_constraints.append(x + y)
+                        temp_sp_constraints.append(x + y)
 
-                square_constraints.append(current_square_constraints)
+                sq_constraints.append(temp_sp_constraints)
 
-        
-        return row_constraints + column_constraints + square_constraints
+        return r_constraints + c_constraints + sq_constraints
 
     """
-    generates the binary constraints based on the rule constraints
+    creates the binary constraints from teh ones above
     """
-    def generate_binary_constraints(self, rule_constraints):
-        generated_binary_constraints = list()
-
-        
-        for constraint_set in rule_constraints:
-
+    def get_binary_constraints(self, constraints):
+        b_constraints = list()
+    
+        for constraint in constraints:
             binary_constraints = list()   
             
-            for tuple_of_constraint in itertools.permutations(constraint_set, 2):
-                binary_constraints.append(tuple_of_constraint)
-
-           
+            for constraint_tuple in itertools.permutations(constraint, 2):
+                binary_constraints.append(constraint_tuple)
+ 
             for constraint in binary_constraints:
-
-
                 constraint_as_list = list(constraint)
-                if(constraint_as_list not in generated_binary_constraints):
-                    generated_binary_constraints.append([constraint[0], constraint[1]])
+                if(constraint_as_list not in b_constraints):
+                    b_constraints.append([constraint[0], constraint[1]])
 
-        return generated_binary_constraints
+        return b_constraints
 
     """
-    generates the the constraint-related cell for each one of them
+    gets the the constraint-related cell for each one of them
     """
-    def generate_related_cells(self):
-        related_cells = dict()
+    def get_related_cells(self):
+        related= dict()
         
         for cell in self.cells:
-
-            related_cells[cell] = list()
+            related[cell] = list()
             
             for constraint in self.binary_constraints:
                 if cell == constraint[0]:
-                    related_cells[cell].append(constraint[1])
+                    related[cell].append(constraint[1])
 
-        return related_cells
+        return related
 
     """
-    checks if the Sudoku's solution is finished
-    we loop through the possibilities for each cell
-    if all of them has only one, then the Sudoku is solved
+    checks if the sudoku is finished
+
     """
     def isFinished(self):
-        for coords, possibilities in self.possibilities.items():
-            if len(possibilities) > 1:
+        for domain in self.domain.items():
+            if len(domain) > 1:
                 return False
-        
         return True
     
     """
-    returns a human-readable string
+    returns a grid as a string
     """
     def __str__(self):
 
         output = ""
         count = 1
-        
-        
+   
         for cell in self.cells:
-            
-            value = str(self.possibilities[cell])
-            if type(self.possibilities[cell]) == list:
-                value = str(self.possibilities[cell][0])
+            value = str(self.domain[cell])
+            if type(self.domain[cell]) == list:
+                value = str(self.domain[cell][0])
 
-            output += "[" + value + "]"
+            output += " " + value + " "
 
             if count >= 9:
                 count = 0

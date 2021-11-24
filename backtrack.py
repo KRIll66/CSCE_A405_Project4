@@ -1,31 +1,23 @@
-from heuristics import select_unassigned_variable, order_domain_values
+from heuristics import mvr, lcv
 from utils import is_consistent, assign, unassign
 
-def recursive_backtrack_algorithm(assignment, sudoku):
+def backtrack_recurr(assignment, sudoku):
 
  
     if len(assignment) == len(sudoku.cells):
         return assignment
 
-    cell = select_unassigned_variable(assignment, sudoku)
+    cell = mvr(assignment, sudoku)
 
+    for value in lcv(sudoku, cell):  
 
-    for value in order_domain_values(sudoku, cell):
-
-        
-        if is_consistent(sudoku, assignment, cell, value):
-
-          
+        if is_consistent(sudoku, assignment, cell, value):         
             assign(sudoku, cell, value, assignment)
+            result = backtrack_recurr(assignment, sudoku)
 
-           
-            result = recursive_backtrack_algorithm(assignment, sudoku)
-
-            
             if result:
                 return result
 
-           
             unassign(sudoku, cell, assignment)
    
     return False
